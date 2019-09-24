@@ -936,14 +936,17 @@ class parse_smart(TextOp):
         0000053245004032
     """
     @classmethod
-    def op(cls, text, *args,**kwargs):
+    def op(cls, text, key_filter=None, *args,**kwargs):
         sep = r'[^a-zA-Z0-9_()\.-]{2,}|[:=]|\.{2,}|[_-]{3,}'
         indent_level = 0
         out = {}
         indent_node = {indent_level:out}
         dct = out
         prev_k = None
+        prev_original_k = None
         block_step = 1
+        if key_filter is None:
+            key_filter=lambda x:x
         # parse the text
         for line in cls._tolist(text):
             if not line.strip():
@@ -952,6 +955,7 @@ class parse_smart(TextOp):
                 m = re.match(r'^(\s*)(\S.*)', line)
                 if m:
                     k,v = (re.split(sep,m.group(2),1) + [''])[:2]
+                    original_k = k
                     v = v.strip()
                     indent = len(m.group(1))
                     #print indent,indent_level,block_step,line,'****',prev_k,k
@@ -963,7 +967,8 @@ class parse_smart(TextOp):
                     elif block_step == 2:
                         if indent == indent_level:
                             block_k = prev_k
-                            prev_k = index_normalize(k)
+                            prev_k = index_normalize(key_filter(k))
+                            prev_original_k = original_k
                             dct[block_k] = [m.group(2)]
                             block_step = 3
                             continue
@@ -972,7 +977,8 @@ class parse_smart(TextOp):
                     elif block_step == 3:
                         if indent == indent_level:
                             dct[block_k].append(m.group(2))
-                            prev_k = index_normalize(k)
+                            prev_original_k = original_k
+                            prev_k = index_normalize(key_filter(k))
                             continue
                         else:
                             block_step = 0
@@ -993,14 +999,15 @@ class parse_smart(TextOp):
                     elif indent > indent_level:
                         if prev_k is not None:
                             if prev_v:
-                                dct[prev_k] = {prev_k:prev_v}
+                                dct[prev_k] = {prev_k:prev_v,
+                                               '_original_key':prev_original_k}
                             else:
-                                dct[prev_k] = {}
+                                dct[prev_k] = {'_original_key':prev_original_k}
                             dct = dct[prev_k]
                         indent_node[indent] = dct
                         indent_level = indent
 
-                    k = index_normalize(k)
+                    k = index_normalize(key_filter(k))
                     if k in dct:
                         prev_v = dct[k]
                         if isinstance(prev_v,dict):
@@ -1018,6 +1025,7 @@ class parse_smart(TextOp):
                     else:
                         dct[k]=v
                         prev_k = k
+                        prev_original_k = original_k
                         prev_v = v
         return out
 
