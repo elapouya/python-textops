@@ -879,7 +879,14 @@ class parse_smart(TextOp):
 
     It looks for key/value patterns, store found values in a dictionary.
     It tries to respect indents by creating sub-dictionaries.
-    The keys are normalized (only keep ``A-Za-z0-9_``), the values are stripped.
+    The keys are normalized (only keep ``A-Za-z0-9_``, the original key value
+    is stored into the inner dict under the '_original_key' key),
+    the values are stripped.
+
+    Args:
+        key_filter (func): a function that will receive a key before
+        normalization and will return a new key string. The could be useful
+        when a chapter title is too long. (Defaut : no filtering)
 
     Returns:
         dict: structured keys:values
@@ -918,15 +925,20 @@ class parse_smart(TextOp):
             'date_time': 'Wed Dec  2 09:51:17 NFT 2015',
             'description': ['DISK OPERATION ERROR'],
             'location': 'U78AA.001.WZSHM0M-P1-C6-T1-W201400A0B8292A18-L13000000000000',
-            'machine_id': {   'machine_id': '00F7B0114C00', 'node_id': 'xvio6'},
+            'machine_id': {   '_original_key': 'Machine Id',
+                              'machine_id': '00F7B0114C00',
+                              'node_id': 'xvio6'},
             'probable_causes': ['DASD DEVICE'],
             'resource_type': 'mpioapdisk',
             'sequence_number': '156637',
-            'type': {   'resource_name': {   'resource_class': 'disk',
+            'type': {   '_original_key': 'Type',
+                        'resource_name': {   '_original_key': 'Resource Name',
+                                             'resource_class': 'disk',
                                              'resource_name': 'hdisk21'},
                         'type': 'PERM',
                         'wpar': 'Global'},
-            'vpd': {   'device_specific_z0': '0000053245004032',
+            'vpd': {   '_original_key': 'VPD',
+                       'device_specific_z0': '0000053245004032',
                        'device_specific_z1': '',
                        'machine_type_and_model': '1815      FAStT',
                        'manufacturer': 'IBM',
